@@ -6,6 +6,7 @@ import time
 import tkinter as tk
 from tkinter import Listbox
 from googletrans import Translator
+import random
 
 # Translate Message
 def translate_message(message):
@@ -56,7 +57,7 @@ def create_connection():
 def create_table(conn):
     try:
         c = conn.cursor()
-        c.execute("DROP TABLE IF EXISTS messages")
+        #c.execute("DROP TABLE IF EXISTS messages")
         c.execute("""
             CREATE TABLE messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -75,24 +76,43 @@ def create_table(conn):
 def select_top_5(conn):
     try:
         c = conn.cursor()
-        c.execute("SELECT Distinct string_rus FROM messages LIMIT 5")
-        return c.fetchall()
+        c.execute("SELECT max(id) max_num from messages")
+        # fetchall() returns tuples
+        result = c.fetchall()
+        max_id = int(result[0][0])
+        number = random.randint(1, max_id)
+        return number
     except Error as e:
         print(e)
 
+
+# --- tkinter ---
+def on_button_click():
+    print("Button clicked!")
+
 def main():
     conn = create_connection()
+    c = conn.cursor()
     if conn is not None:
-        create_table(conn)
-        get_chromium_driver(conn)
-        results = select_top_5(conn)
+        #create_table(conn)
+        #get_chromium_driver(conn)
+        result = select_top_5(conn)
+        print(result)
+
         #--- GUI ---
         root = tk.Tk()
-        listbox = Listbox(root)
-        listbox.pack()
-        for result in results:
-            listbox.insert(tk.END, result)
+        #listbox = Listbox(root)
+        c.execute("SELECT string_rus FROM messages WHERE id = {}".format(result))
+        query = c.fetchall()
+        label = tk.Label(root, text=query)
+        button = tk.Button(root, text="One Day", command=on_button_click)
+        #listbox.pack()
+        label.pack()
+        button.pack()
+        #for result in results:
+        #    listbox.insert(tk.END, result)
         root.mainloop()
+
     else:
         print("Error! cannot create the database connection.")
 
